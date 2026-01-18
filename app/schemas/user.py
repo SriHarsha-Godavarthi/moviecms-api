@@ -13,6 +13,7 @@ class UserBase(BaseModel):
     """
     firstname: str
     lastname: str
+    role: str
     email: EmailStr
     phonenumber: str
     isPremiumUser: bool = False
@@ -27,3 +28,7 @@ class UserRead(UserBase):
 
     class Config:
         from_attributes = True
+
+class UserPayload(BaseModel):
+    email: str
+    password: str

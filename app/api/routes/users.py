@@ -19,7 +19,7 @@ router = APIRouter(prefix="/users", tags=["users"])
 async def get_user(
     userid: int,
     db: AsyncSession = Depends(get_db),
-    Authorization: str = Header(str, alias="Authorization"),
+    # Authorization: str = Header(str, alias="Authorization"),
 ):
     """Retrieve a user by `userid`. Protected route.
 
@@ -38,7 +38,7 @@ async def get_user(
 async def delete_user(
     userid: int,
     db: AsyncSession = Depends(get_db),
-    token: str = Depends(oauth2_scheme),
+    # token: str = Depends(oauth2_scheme),
 ):
     """Delete a user by `userid`. Protected route.
 

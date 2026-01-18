@@ -1,7 +1,7 @@
 """Security utilities: password hashing and JWT helpers."""
 
 from datetime import datetime, timedelta
-from typing import Optional
+from typing import Optional, Dict, Any
 
 from jose import jwt, JWTError
 from passlib.context import CryptContext
@@ -26,10 +26,16 @@ def get_password_hash(password: str) -> str:
     return pwd_context.hash(password)
 
 
-def create_access_token(subject: str, expires_delta: Optional[timedelta] = None) -> str:
-    """Create a signed JWT access token for the given subject (user id)."""
+def create_access_token(subject: str, expires_delta: Optional[timedelta] = None, claims: Optional[Dict[str, Any]] = None) -> str:
+    """Create a signed JWT access token.
+
+    Includes standard claims `sub` (subject/user id) and `exp` (expiry),
+    and allows additional claims (e.g., `role`) to be embedded via `claims`.
+    """
     expire = datetime.utcnow() + (expires_delta or timedelta(minutes=settings.access_token_expire_minutes))
-    to_encode = {"sub": subject, "exp": expire}
+    to_encode: Dict[str, Any] = {"sub": subject, "exp": expire}
+    if claims:
+        to_encode.update(claims)
     return jwt.encode(to_encode, settings.jwt_secret, algorithm=settings.jwt_algorithm)
 
 
@@ -38,5 +44,13 @@ def decode_token(token: str) -> Optional[str]:
     try:
         payload = jwt.decode(token, settings.jwt_secret, algorithms=[settings.jwt_algorithm])
         return payload.get("sub")
+    except JWTError:
+        return None
+
+def decode_claims(token: str) -> Optional[Dict[str, Any]]:
+    """Decode a JWT and return all claims if valid, else None."""
+    try:
+        payload = jwt.decode(token, settings.jwt_secret, algorithms=[settings.jwt_algorithm])
+        return payload
     except JWTError:
         return None

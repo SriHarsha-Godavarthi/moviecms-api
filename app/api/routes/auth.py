@@ -19,12 +19,14 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
-from app.schemas.user import UserCreate, UserRead
+
+from app.schemas.user import UserCreate, UserRead, UserPayload
 from app.schemas.token import Token
 from app.core.security import get_password_hash, verify_password, create_access_token
 from app.db.session import get_db
 from app.db.models.user import User
 
+    
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 @router.post("/signup", response_model=UserRead)
@@ -63,7 +65,7 @@ async def signup(payload: UserCreate, db: AsyncSession = Depends(get_db)):
     return user
 
 @router.post("/login", response_model=Token)
-async def login(email: str, password: str, db: AsyncSession = Depends(get_db)):
+async def login(payload: UserPayload, db: AsyncSession = Depends(get_db)):
     """Authenticate a user and return a JWT access token.
 
     Steps breakdown:
@@ -73,12 +75,13 @@ async def login(email: str, password: str, db: AsyncSession = Depends(get_db)):
     4) Return: send `Token` with `access_token` for use in `Authorization: Bearer`
     """
     # 1) Lookup: Query for the user record associated with the provided email.
-    result = await db.execute(select(User).where(User.email == email))
+    result = await db.execute(select(User).where(User.email == payload.email))
     user = result.scalar_one_or_none()
     # 2) Verify: If user is missing or the password doesn't match, deny access.
-    if not user or not verify_password(password, user.password):
+    if not user or not verify_password(payload.password, user.password):
         raise HTTPException(status_code=401, detail="Invalid credentials")
-    # 3) Issue: `subject` is the `userid`; middleware will decode and attach it to `request.state`.
-    token = create_access_token(subject=str(user.userid))
+    # 3) Issue: Subject is the `userid`. Embed role derived from `isPremiumUser`.
+    role = "admin" if getattr(user, "isPremiumUser", False) else "user"
+    token = create_access_token(subject=str(user.userid), claims={"role": role})
     # 4) Return: Pydantic `Token` model wraps the JWT in a typed response.
     return Token(access_token=token)
