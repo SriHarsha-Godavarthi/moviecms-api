@@ -46,6 +46,7 @@ async def jwt_middleware(request: Request, call_next):
 
     # Header parsing: expect a Bearer token in Authorization
     auth_header = request.headers.get("Authorization")
+    print("header",request.headers)
     if not auth_header or not auth_header.startswith("Bearer "):
         # Return JSON directly to avoid exception propagation issues in middleware
         return JSONResponse(status_code=401, content={"detail": "Not authenticated"})

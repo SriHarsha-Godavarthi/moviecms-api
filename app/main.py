@@ -9,6 +9,7 @@ import asyncio
 import logging
 
 from fastapi import FastAPI
+from fastapi.openapi.utils import get_openapi
 from fastapi.openapi.docs import get_redoc_html
 
 from app.middleware.jwt import jwt_middleware
@@ -38,6 +39,29 @@ app.include_router(users_router)
 app.include_router(movies_router)
 app.include_router(likes_router)
 app.include_router(well_known_router)
+
+# Expose Bearer auth in OpenAPI so Swagger UI can send Authorization header
+def custom_openapi():
+    if app.openapi_schema:
+        return app.openapi_schema
+    openapi_schema = get_openapi(
+        title=app.title,
+        version="1.0.0",
+        description="OpenAPI schema for MovieFlix CMS API",
+        routes=app.routes,
+    )
+    components = openapi_schema.setdefault("components", {})
+    security_schemes = components.setdefault("securitySchemes", {})
+    security_schemes["BearerAuth"] = {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+    }
+    openapi_schema["security"] = [{"BearerAuth": []}]
+    app.openapi_schema = openapi_schema
+    return app.openapi_schema
+
+app.openapi = custom_openapi
 
 # Custom Redoc that pins a working CDN URL (avoids jsdelivr @next 404s)
 @app.get("/redoc", include_in_schema=False)
