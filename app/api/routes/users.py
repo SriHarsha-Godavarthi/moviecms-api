@@ -4,18 +4,23 @@ Both endpoints are protected by the JWT middleware and operate using async
 SQLAlchemy queries to avoid blocking the event loop.
 """
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Header
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
 from app.schemas.user import UserRead
 from app.db.session import get_db
 from app.db.models.user import User
+from app.deps import oauth2_scheme
 
 router = APIRouter(prefix="/users", tags=["users"])
 
 @router.get("/{userid}", response_model=UserRead)
-async def get_user(userid: int, db: AsyncSession = Depends(get_db)):
+async def get_user(
+    userid: int,
+    db: AsyncSession = Depends(get_db),
+    Authorization: str = Header(str, alias="Authorization"),
+):
     """Retrieve a user by `userid`. Protected route.
 
     Steps breakdown:
@@ -30,7 +35,11 @@ async def get_user(userid: int, db: AsyncSession = Depends(get_db)):
     return user
 
 @router.delete("/{userid}")
-async def delete_user(userid: int, db: AsyncSession = Depends(get_db)):
+async def delete_user(
+    userid: int,
+    db: AsyncSession = Depends(get_db),
+    token: str = Depends(oauth2_scheme),
+):
     """Delete a user by `userid`. Protected route.
 
     Steps breakdown:

@@ -4,6 +4,9 @@ version = "0.1.0"
 description = "MovieFlix CMS REST API built with FastAPI"
 readme = "readme.md"
 requires-python = ">=3.11"
+dependencies = [
+    "pydantic[email]>=2.12.5",
+]
 
 [tool.black]
 line-length = 100

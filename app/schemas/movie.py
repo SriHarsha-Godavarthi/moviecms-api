@@ -25,6 +25,7 @@ class MovieBase(BaseModel):
     genre: str
     directedby: str
     certificatetype: str
+    published: bool = False
 
 class MovieCreate(MovieBase):
     """Input model for creating a movie."""
@@ -35,3 +36,25 @@ class MovieRead(MovieBase):
 
     class Config:
         from_attributes = True
+
+class MovieUpdate(BaseModel):
+    """Partial update payload for movies (admin-only).
+
+    All fields are optional; only provided fields will be updated.
+    """
+    Name: Optional[str] = None
+    Image: Optional[str] = None
+    CDNImage: Optional[str] = None
+    ReleaseDate: Optional[date] = None
+    ActorsList: Optional[str] = None
+    language: Optional[str] = None
+    duration: Optional[int] = None
+    CDN_VIDEO: Optional[str] = None
+    description: Optional[str] = None
+    createdby: Optional[str] = None
+    lastupdated: Optional[str] = None
+    lastupdatedby: Optional[str] = None
+    genre: Optional[str] = None
+    directedby: Optional[str] = None
+    certificatetype: Optional[str] = None
+    published: Optional[bool] = None

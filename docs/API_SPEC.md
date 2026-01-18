@@ -17,6 +17,7 @@ This document supplements the provided README without modifying it.
 - POST /movies/: Create movie (protected)
 - GET /movies/{movieid}: Get movie
 - DELETE /movies/{movieid}: Delete movie (protected)
+- PATCH /movies/{movieid}: Partially update movie (admin-only). Supports toggling `published` and updating any provided fields.
 
 ## Likes
 - POST /likes/: Like a movie (protected)

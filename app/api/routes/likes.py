@@ -12,7 +12,7 @@ Notes:
 
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Header
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
@@ -21,11 +21,16 @@ from app.db.session import get_db
 from app.db.models.like import MoviesLiked
 from app.db.models.movie import Movie
 from app.db.models.user import User
+from app.deps import oauth2_scheme
 
 router = APIRouter(prefix="/likes", tags=["likes"])
 
 @router.post("/", response_model=LikeRead)
-async def like_movie(payload: LikeCreate, db: AsyncSession = Depends(get_db)):
+async def like_movie(
+    payload: LikeCreate,
+    db: AsyncSession = Depends(get_db),
+    Authorization: str = Header(str, alias="Authorization"),
+):
     """Create a like entry for a user/movie pair. Protected route.
 
     Steps breakdown:
@@ -57,7 +62,11 @@ async def like_movie(payload: LikeCreate, db: AsyncSession = Depends(get_db)):
     return like
 
 @router.get("/user/{userid}")
-async def list_user_likes(userid: int, db: AsyncSession = Depends(get_db)):
+async def list_user_likes(
+    userid: int,
+    db: AsyncSession = Depends(get_db),
+    token: str = Depends(oauth2_scheme),
+):
     """List all likes for the given `userid`. Protected route.
 
     Internals:

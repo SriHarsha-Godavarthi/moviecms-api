@@ -8,7 +8,11 @@ from passlib.context import CryptContext
 
 from app.core.config import get_settings
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+pwd_context = CryptContext(
+    # Use pbkdf2_sha256 for wide compatibility and no 72-byte limit
+    schemes=["pbkdf2_sha256"],
+    deprecated="auto",
+)
 settings = get_settings()
 
 
@@ -18,7 +22,7 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 
 
 def get_password_hash(password: str) -> str:
-    """Hash a password using bcrypt."""
+    """Hash a password using pbkdf2_sha256 (no bcrypt 72-byte limitation)."""
     return pwd_context.hash(password)
 
 
