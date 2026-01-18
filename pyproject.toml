@@ -1,0 +1,18 @@
+[project]
+name = "movie-restapi"
+version = "0.1.0"
+description = "MovieFlix CMS REST API built with FastAPI"
+readme = "readme.md"
+requires-python = ">=3.11"
+
+[tool.black]
+line-length = 100
+
+[tool.ruff]
+line-length = 100
+lint.select = ["E","F","I","B","UP","S","N"]
+lint.ignore = ["E501"]
+
+[tool.pytest.ini_options]
+addopts = "-q"
+
