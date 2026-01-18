@@ -18,3 +18,4 @@ class User(Base):
     password: Mapped[str] = mapped_column(String(255))
     phonenumber: Mapped[str] = mapped_column(String(30))
     isPremiumUser: Mapped[bool] = mapped_column(Boolean, default=False)
+    role: Mapped[str] = mapped_column(String(50), default="user")

@@ -70,3 +70,19 @@ async def on_startup():
 
         await conn.run_sync(ensure_published_column)
 
+        # Ensure `role` column exists on `users` for SQLite dev DBs
+        def ensure_role_column(sync_conn):
+            try:
+                rows = sync_conn.execute("PRAGMA table_info('users')").fetchall()
+                cols = {row[1] for row in rows}
+                if "role" not in cols:
+                    sync_conn.execute(
+                        "ALTER TABLE users ADD COLUMN role TEXT NOT NULL DEFAULT 'user'"
+                    )
+            except Exception as exc:
+                logging.getLogger(__name__).warning(
+                    "Skipping role column migration: %s", exc
+                )
+
+        await conn.run_sync(ensure_role_column)
+

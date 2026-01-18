@@ -13,7 +13,7 @@ class UserBase(BaseModel):
     """
     firstname: str
     lastname: str
-    role: str
+    role: str = "user"
     email: EmailStr
     phonenumber: str
     isPremiumUser: bool = False
