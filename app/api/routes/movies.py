@@ -19,7 +19,8 @@ router = APIRouter(prefix="/movies", tags=["movies"])
 async def create_movie(
     payload: MovieCreate,
     db: AsyncSession = Depends(get_db),
-    Authorization: str = Header(str, alias="Authorization"),
+    admin_user=Depends(require_admin_user),
+
 ):
     """Create a new movie record. Protected route.
 
@@ -52,7 +53,8 @@ async def get_movie(movieid: int, db: AsyncSession = Depends(get_db)):
 async def delete_movie(
     movieid: int,
     db: AsyncSession = Depends(get_db),
-    token: str = Depends(oauth2_scheme),
+    admin_user=Depends(require_admin_user),
+
 ):
     """Delete a movie by `movieid`. Protected route.
 
@@ -75,7 +77,6 @@ async def update_movie(
     movieid: int,
     payload: MovieUpdate,
     db: AsyncSession = Depends(get_db),
-    token: str = Depends(oauth2_scheme),
     admin_user=Depends(require_admin_user),
 ):
     """Partially update a movie (admin-only).
