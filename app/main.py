@@ -20,6 +20,7 @@ from app.api.routes.movies import router as movies_router
 from app.api.routes.likes import router as likes_router
 from app.api.routes.well_known import router as well_known_router
 from app.db.session import Base, engine
+from app.core.config import get_settings
 
 app = FastAPI(
     title="MovieFlix CMS API",
@@ -51,38 +52,34 @@ async def redoc_html():
 @app.on_event("startup")
 async def on_startup():
     """Create DB schema for dev/local runs."""
+    settings = get_settings()
     async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-        # Ensure `published` column exists on `movies` for SQLite dev DBs
-        def ensure_published_column(sync_conn):
-            try:
-                rows = sync_conn.execute("PRAGMA table_info('movies')").fetchall()
-                cols = {row[1] for row in rows}
-                if "published" not in cols:
-                    # SQLite uses INTEGER for booleans; default 0 (False)
-                    sync_conn.execute(
-                        "ALTER TABLE movies ADD COLUMN published INTEGER NOT NULL DEFAULT 0"
+        # In production, rely on Alembic migrations and avoid runtime schema changes.
+        is_sqlite = engine.url.get_backend_name() == "sqlite"
+        is_production = settings.environment.lower() == "production"
+        if settings.auto_create_schema and is_sqlite and not is_production:
+            await conn.run_sync(Base.metadata.create_all)
+
+            # Ensure `published` column exists on `movies` for SQLite dev DBs
+            def ensure_published_column(sync_conn):
+                try:
+                    rows = sync_conn.execute("PRAGMA table_info('movies')").fetchall()
+                    cols = {row[1] for row in rows}
+                    if "published" not in cols:
+                        # SQLite uses INTEGER for booleans; default 0 (False)
+                        sync_conn.execute(
+                            "ALTER TABLE movies ADD COLUMN published INTEGER NOT NULL DEFAULT 0"
+                        )
+                except Exception as exc:
+                    logging.getLogger(__name__).warning(
+                        "Skipping published column migration: %s", exc
                     )
-            except Exception as exc:
-                logging.getLogger(__name__).warning(
-                    "Skipping published column migration: %s", exc
-                )
 
-        await conn.run_sync(ensure_published_column)
-
-        # Ensure `role` column exists on `users` for SQLite dev DBs
-        def ensure_role_column(sync_conn):
-            try:
-                rows = sync_conn.execute("PRAGMA table_info('users')").fetchall()
-                cols = {row[1] for row in rows}
-                if "role" not in cols:
-                    sync_conn.execute(
-                        "ALTER TABLE users ADD COLUMN role TEXT NOT NULL DEFAULT 'user'"
-                    )
-            except Exception as exc:
-                logging.getLogger(__name__).warning(
-                    "Skipping role column migration: %s", exc
-                )
-
-        await conn.run_sync(ensure_role_column)
+            await conn.run_sync(ensure_published_column)
+        else:
+            logging.getLogger(__name__).info(
+                "Startup auto-migrations disabled (env=%s, auto_create_schema=%s). Use Alembic.",
+                settings.environment,
+                settings.auto_create_schema,
+            )
 
